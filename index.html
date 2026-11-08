@@ -36,13 +36,13 @@ h1 span{color:var(--red2)}
 .slot3d::before{content:"";position:absolute;inset:0;border-radius:7px;border:1px dashed rgba(255,255,255,.12)}
 #slot0{left:50%;top:80%}#slot1{left:23%;top:50%}#slot2{left:50%;top:21%}#slot3{left:77%;top:50%}
 .slot3d.gone::before{border-color:transparent}
-.c3d{position:absolute;inset:0;transform-style:preserve-3d;transform:translateZ(1px) rotateY(180deg)}
+.c3d{position:absolute;inset:0;transform-style:preserve-3d;-webkit-transform-style:preserve-3d;transform:translateZ(1px) rotateY(180deg)}
 .c3d .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .c3d .face.bk{transform:rotateY(180deg)}
 .c3d .card{width:100%;height:100%;font-size:26px}
 .c3d .card .c,.c3d .card .c2{font-size:10px}
 .c3d.land{animation:land .6s cubic-bezier(.2,.8,.3,1)}
-@keyframes land{0%{transform:translate3d(var(--fx),var(--fy),200px) rotateZ(var(--fr)) rotateY(180deg);opacity:0}25%{opacity:1}
+@keyframes land{0%{transform:translate3d(var(--fx),var(--fy),200px) rotateZ(var(--fr)) rotateY(180deg)}
  80%{transform:translate3d(0,0,6px) rotateY(180deg)}100%{transform:translateZ(1px) rotateY(180deg)}}
 .c3d.up{transform:translateZ(1px) rotateY(0);animation:flipUp .6s cubic-bezier(.3,1.3,.5,1)}
 @keyframes flipUp{0%{transform:translateZ(1px) rotateY(180deg)}45%{transform:translateZ(70px) rotateY(90deg) rotateX(-12deg)}100%{transform:translateZ(1px) rotateY(0)}}
@@ -89,6 +89,14 @@ h1 span{color:var(--red2)}
 .card.charm{color:#79e08a;border-color:#2a6a35}
 .card.rev{color:#7fb7ff;border-color:#2a4a7a}
 .card.vamp{color:#d04aff;border-color:#5a1f7a}.card.mimic{color:#e6c46a;border-color:#7a6a2a}
+.card.shroom{color:#ff7ad9;border-color:#7a2a6a}.card.shroom .sn{font-size:8.5px;letter-spacing:0}
+.card.garb{background:linear-gradient(160deg,hsl(var(--h) 70% 82%),hsl(calc(var(--h) + 110deg) 60% 55%));color:#140014;font-size:24px;
+ text-shadow:2px 0 rgba(255,0,80,.6),-2px 0 rgba(0,200,255,.6);animation:garb .5s steps(3) infinite}
+.card.garb .c,.card.garb .c2{font-size:11px}
+@keyframes garb{0%{filter:hue-rotate(0) blur(.3px)}33%{filter:hue-rotate(120deg) blur(.8px);transform:skewX(4deg)}66%{filter:hue-rotate(240deg) blur(.2px);transform:skewX(-3deg)}}
+.hand.halluc{animation:trip 2.4s linear infinite;border-radius:12px}
+@keyframes trip{0%{box-shadow:0 0 22px #ff00c8}33%{box-shadow:0 0 22px #00ffd0}66%{box-shadow:0 0 22px #ffe600}100%{box-shadow:0 0 22px #ff00c8}}
+.hand.halluc .card.sel{transform:translateY(-12px) rotate(-4deg)}
 .card.bomb{color:#ff9a3c;border-color:#7a3f12}.card.seal{color:#c8c8c8;border-color:#555}.card.scale{color:#5fd8d0;border-color:#1f5a56}
 .card.back{background:repeating-linear-gradient(45deg,#3a0d14 0 6px,#25070c 6px 12px);border:2px solid #6d1520}
 .card.back::after{content:"✠";color:#a33;font-size:22px}
@@ -297,7 +305,7 @@ header,.info,.event,.log{filter:blur(calc(var(--k)*var(--k)*2.6px)) contrast(cal
 const $=id=>document.getElementById(id);
 const MAXHP=20,TRICKS=4,REAPER=4,GREED=3,VAMP=3,BOMB=2;
 const SP={reaper:{i:'☠',n:'死神'},charm:{i:'✚',n:'護符'},rev:{i:'⇅',n:'反転'},
- vamp:{i:'❦',n:'吸血'},mimic:{i:'◐',n:'偽札'},bomb:{i:'✸',n:'爆弾'},seal:{i:'⊘',n:'封印'},scale:{i:'⚖\uFE0E',n:'天秤'}};
+ vamp:{i:'❦',n:'吸血'},mimic:{i:'◐',n:'偽札'},bomb:{i:'✸',n:'爆弾'},seal:{i:'⊘',n:'封印'},scale:{i:'⚖\uFE0E',n:'天秤'},shroom:{i:'🍄',n:'幻覚キノコ'}};
 const EVENTS=[
  {k:'calm',n:'平穏',d:'特別なルールはない。',w:2},
  {k:'blood',n:'血の宴',d:'このラウンドのダメージはすべて2倍。',w:2},
@@ -362,7 +370,7 @@ function modal(t,h,btns){return new Promise(res=>{$('mT').textContent=t;$('mB').
 /* cards */
 function deck(){const d=[];for(let v=1;v<=13;v++)for(let k=0;k<4;k++)d.push({t:'num',v});
  ['reaper','charm','rev'].forEach(t=>{for(let k=0;k<3;k++)d.push({t})});
- ['vamp','mimic','bomb','seal','scale'].forEach(t=>{for(let k=0;k<2;k++)d.push({t})});
+ ['vamp','mimic','bomb','seal','scale','shroom'].forEach(t=>{for(let k=0;k<2;k++)d.push({t})});
  for(let i=d.length-1;i>0;i--){const j=rnd(i+1);[d[i],d[j]]=[d[j],d[i]];}return d;}
 function cardHTML(c,cls=''){
  if(!c)return '';
@@ -389,7 +397,7 @@ function breakGauge(prev,now){const sg=$('segs');const box=$('mylife');
 const hpColor=h=>h>=14?'#5fd07a':h>=8?'#e6c046':h>=4?'#ff7a3c':'#ff3b52';
 function renderTable(){$('seats').innerHTML=P.map((p,k)=>`
  <div class="seat pos${k} ${p.alive?'':'dead'}" id="s${k}">
-  <div class="nm"><span class="dot" style="background:${p.color}"></span>${p.name}${k===0?` <small>${p.no}</small>`:''}</div>
+  <div class="nm"><span class="dot" style="background:${p.color}"></span>${p.name}${k===0?` <small>${p.no}</small>`:''}${p.shroom>0?' 🍄'+p.shroom:''}</div>
   <div class="gauge"><div class="fill" style="width:${p.hp/MAXHP*100}%;background:${hpColor(p.hp)};color:${hpColor(p.hp)}"></div></div>
   <div class="row"><span class="hpn" style="color:${hpColor(p.hp)}">${p.hp}<span style="color:#55525a">/${MAXHP}</span></span><span>札${p.hand.length}</span></div>
   <div class="res ${p.resCls||''}">${p.res||''}</div>
@@ -400,9 +408,9 @@ function renderTable(){$('seats').innerHTML=P.map((p,k)=>`
 const FROM=[[0,190,8],[-190,0,-30],[0,-190,170],[190,0,30]];
 function placeCard(k,c){const sl=$('slot'+k);sl.innerHTML='';const e=document.createElement('div');e.className='c3d land';
  const [fx,fy,fr]=FROM[k];e.style.setProperty('--fx',fx+'px');e.style.setProperty('--fy',fy+'px');e.style.setProperty('--fr',(fr+rnd(30)-15)+'deg');
- e.innerHTML=`<div class="face fr">${cardHTML(c)}</div><div class="face bk">${cardHTML({back:1})}</div>`;sl.appendChild(e);tone(240+rnd(60),.05,'triangle',.05);}
+ e.innerHTML=`<div class="face fr"></div><div class="face bk">${cardHTML({back:1})}</div>`;sl.appendChild(e);tone(240+rnd(60),.05,'triangle',.05);}
 async function revealCards(){const ks=P.map((p,k)=>k).filter(k=>$('slot'+k).firstChild);
- for(const k of ks){const e=$('slot'+k).firstChild;e.classList.remove('land');e.classList.add('up');tone(700+k*90,.06,'triangle',.05);await sleep(130);}
+ for(const k of ks){const e=$('slot'+k).firstChild;e.querySelector('.fr').innerHTML=cardHTML(P[k].played);e.classList.remove('land');e.classList.add('up');tone(700+k*90,.06,'triangle',.05);await sleep(130);}
  await sleep(650);}
 async function morphCard(k,c){const e=$('slot'+k).firstChild;if(!e)return;e.classList.remove('morph','up');void e.offsetWidth;
  e.style.transform='translateZ(1px) rotateY(0)';e.classList.add('morph');
@@ -426,24 +434,32 @@ function applyHP(){const me=P[0];if(!me)return;const hp=me.alive?me.hp:0;
  if(hp<lastHp)burst(Math.min(1,(lastHp-hp)/8));lastHp=hp;}
 function glitchOnce(){const els=[...document.querySelectorAll('header,.info,.event,.scene,.hand,.log')];const e=pick(els);
  e.classList.remove('glitch');void e.offsetWidth;e.classList.add('glitch');setTimeout(()=>e.classList.remove('glitch'),200);}
-function scramble(n){const w=document.createTreeWalker($('wrap'),NodeFilter.SHOW_TEXT,{acceptNode:t=>t.nodeValue.trim()?1:2});
+function scramble(n,rate=.6){const w=document.createTreeWalker($('wrap'),NodeFilter.SHOW_TEXT,{acceptNode:t=>t.nodeValue.trim()?1:2});
  const ns=[];while(w.nextNode())ns.push(w.currentNode);
  for(let k=0;k<n&&ns.length;k++){const t=ns.splice(rnd(ns.length),1)[0];const o=orig.has(t)?orig.get(t):t.nodeValue;orig.set(t,o);
-  t.nodeValue=[...o].map(c=>c.trim()&&Math.random()<.6?pick(GCH):c).join('');
+  t.nodeValue=[...o].map(c=>c.trim()&&Math.random()<rate?pick(GCH):c).join('');
   setTimeout(()=>{t.nodeValue=o;orig.delete(t);},120+rnd(280));}}
 function burst(f=1){for(let i=0;i<3+Math.round(f*6);i++)setTimeout(()=>{glitchOnce();scramble(5);},i*80);
  for(let i=0;i<5;i++)setTimeout(()=>tone(60+rnd(900),.04,'square',.04),i*70);}
 (function gloop(){let next=900;
  if(P[0]&&P[0].alive&&K>.2){const k=K;
   if(Math.random()<k)glitchOnce();if(k>.6&&Math.random()<k-.3)setTimeout(glitchOnce,90);
-  if(Math.random()<k*k)scramble(1+Math.floor(k*k*5));
   if(k>.75&&Math.random()<.3)tone(40+rnd(80),.06,'sawtooth',.03);
   next=400+(1-k)*3200+rnd(900);}
  else if(hpLv===0){if(Math.random()<.4)glitchOnce();next=2500+rnd(3000);}
  setTimeout(gloop,next);})();
+// momentary text corruption: more often / more text the lower your life and the more recent damage
+let shock=0;
+function scrambleStorm(d){shock+=d;const n=2+Math.min(14,d);const rate=.5+Math.min(.45,d/20);
+ for(let i=0;i<n;i++)setTimeout(()=>scramble(2+Math.ceil(d/2),rate),i*70+rnd(40));}
+(function sloop(){let next=1500;
+ if(P[0]&&P[0].alive){const heat=Math.min(1,K+Math.min(1,shock/12));
+  if(heat>.03){scramble(1+Math.round(heat*7),.3+heat*.55);next=140+(1-heat)*(1-heat)*3400+rnd(300);}
+  shock*=.86;}
+ setTimeout(sloop,next);})();
 setInterval(()=>{if(hpLv===1&&actx){tone(55,.16,'sine',.28);setTimeout(()=>tone(46,.13,'sine',.2),200);}},1200);
 function selectCard(i){sel=i;tone(660,.03);renderHand();const c=P[0].hand[sel];if(!c)return;
- $('playBtn').disabled=false;$('playBtn').textContent=`${cname(c)} を出す`;}
+ $('playBtn').disabled=false;$('playBtn').textContent=hallu()?`「${garbTxt(3)}」を出す`:`${cname(c)} を出す`;}
 function overTable(e){const r=$('scene').getBoundingClientRect();return e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;}
 function bindDrag(el,i){el.addEventListener('pointerdown',e=>{if($('hand').classList.contains('locked'))return;e.preventDefault();
  const sx=e.clientX,sy=e.clientY,r=el.getBoundingClientRect();let ghost=null;try{el.setPointerCapture(e.pointerId);}catch(_){}
@@ -457,7 +473,14 @@ function bindDrag(el,i){el.addEventListener('pointerdown',e=>{if($('hand').class
   if(u.type==='pointerup'&&overTable(u)){ghost.remove();selectCard(i);if($('playBtn').onclick)$('playBtn').onclick();}
   else{ghost.style.transition='transform .25s ease-out';ghost.style.transform='none';setTimeout(()=>{ghost.remove();el.classList.remove('dragging');},260);}};
  el.addEventListener('pointermove',mv);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);});}
-function renderHand(){const me=P[0];$('hand').innerHTML=me.hand.map((c,i)=>cardHTML(c,i===sel?'sel':'').replace('class="card','data-i="'+i+'" class="card')).join('');
+const GARB=[...'▓▒░█#@%&?!¥$ｦｱｳｴｵﾀﾁﾂ※〓◆◇◎☆♪∀∂∇Ж⌘'];
+const garbTxt=n=>Array.from({length:n},()=>pick(GARB)).join('');
+const garbCard=cls=>`<div class="card garb ${cls}" style="--h:${rnd(360)}deg"><span class="c">${garbTxt(1)}</span><span class="gm">${garbTxt(1+rnd(2))}</span><span class="c2">${garbTxt(1)}</span></div>`;
+const hallu=()=>P[0]&&P[0].shroom>0;
+setInterval(()=>{if(!hallu())return;document.querySelectorAll('#hand .card.garb').forEach(e=>{e.style.setProperty('--h',rnd(360)+'deg');
+ e.querySelectorAll('.c,.c2').forEach(x=>x.textContent=garbTxt(1));const g=e.querySelector('.gm');if(g)g.textContent=garbTxt(1+rnd(2));});
+ if(sel>=0&&!$('playBtn').disabled&&!$('hand').classList.contains('locked'))$('playBtn').textContent=`「${garbTxt(3)}」を出す`;},200);
+function renderHand(){const me=P[0];$('hand').classList.toggle('halluc',hallu());$('hand').innerHTML=me.hand.map((c,i)=>(hallu()?garbCard(i===sel?'sel':''):cardHTML(c,i===sel?'sel':'')).replace('class="card','data-i="'+i+'" class="card')).join('');
  $('hand').querySelectorAll('.card').forEach(e=>bindDrag(e,+e.dataset.i));
  $('handInfo').textContent=me.alive?'ドラッグでテーブルへ／タップで選択':'脱落';}
 function renderEvent(){const e=$('event');e.className='event'+(ev.k==='calm'?' calm':'');e.querySelector('.en').textContent=ev.n;e.querySelector('.ed').textContent=ev.d;}
@@ -465,11 +488,11 @@ function renderEvent(){const e=$('event');e.className='event'+(ev.k==='calm'?' c
 /* damage */
 async function damage(p,n,why,raw){if(!p.alive||n<=0)return;const d=(ev.k==='blood'&&!raw)?n*2:n;const prev=p.hp;p.hp=Math.max(0,p.hp-d);
  p.res=(p.res?p.res+' ':'')+`-${d}`;p.resCls='bad';log(`${nm(p)} に <b>${d}</b> ダメージ ― ${why}（残り ${p.hp}）`,'bad');
- renderTable();hurtFx(p,d);dmgFloat(p,d);if(p===P[0]){breakGauge(prev,p.hp);addScars(prev-p.hp+Math.round(K*3));}caption(p,d,why);await sleep(p===P[0]?1500:1100);}
+ renderTable();hurtFx(p,d);dmgFloat(p,d);if(p===P[0]){breakGauge(prev,p.hp);addScars(prev-p.hp+Math.round(K*3));}caption(p,d,why);if(p===P[0])scrambleStorm(d);else scramble(Math.ceil(d/3),.4);await sleep(p===P[0]?1500:1100);}
 async function heal(p,n,why){if(!p.alive||p.hp>=MAXHP||n<=0)return;const g=Math.min(n,MAXHP-p.hp);p.hp+=g;if(p===P[0])healScars(g*2);p.res=(p.res?p.res+' ':'')+'+'+g;p.resCls=p.resCls||'good';log(`${nm(p)} ― ${why}　命 +${g}`,'good');tone(1320,.12,'triangle');}
 
 /* CPU */
-const TARGETED=['reaper','vamp','scale'];
+const TARGETED=['reaper','vamp','scale','shroom'];
 // weighted random: weaker players more likely, everyone (incl. you) has the same base chance
 function reaperTarget(p,others){const ws=others.map(o=>{let w=6+(MAXHP-o.hp)*.6;if(o.hp<=REAPER)w+=8;return w*(.6+Math.random()*.8);});
  let r=Math.random()*ws.reduce((a,b)=>a+b,0);for(let i=0;i<others.length;i++){if((r-=ws[i])<0)return others[i];}return others[others.length-1];}
@@ -478,7 +501,9 @@ function cpuChoose(p){const h=p.hand;const nums=h.map((c,i)=>[c,i]).filter(([c])
  const idx=t=>h.findIndex(c=>c.t===t);
  const others=alive().filter(x=>x!==p);
  const rev=ev.k==='night';const sil=ev.k==='silence';const mirror=ev.k==='mirror';
+ if(p.shroom>0){const i=rnd(h.length);return{i,tgt:TARGETED.includes(h[i].t)?pick(alive()):null,tripped:1};}   // hallucinating: fully random
  if(!sil){
+  if(idx('shroom')>=0&&Math.random()<.45){const c=others.filter(o=>!(o.shroom>0));return{i:idx('shroom'),tgt:pick(c.length?c:others)};}
   if(p.hp<=6&&idx('charm')>=0&&Math.random()<.75)return{i:idx('charm')};
   if(idx('scale')>=0){const top=richest(others);if(top.hp-p.hp>=6&&Math.random()<.8)return{i:idx('scale'),tgt:top};}
   if(!mirror&&idx('vamp')>=0&&Math.random()<(p.hp<=12?.6:.3))return{i:idx('vamp'),tgt:reaperTarget(p,others)};
@@ -500,11 +525,13 @@ function cpuChoose(p){const h=p.hand;const nums=h.map((c,i)=>[c,i]).filter(([c])
 /* human */
 const TGT_TXT={reaper:['死神の標的','誰の命を刈り取る？（-'+REAPER+'）','護符を出されていたら跳ね返される'],
  vamp:['吸血の標的','誰の命を吸う？（相手 -'+VAMP+'、自分 +'+VAMP+'）','護符を出されていたら防がれる'],
- scale:['天秤の相手','誰と命を平均する？','護符を出されていたら防がれる']};
+ scale:['天秤の相手','誰と命を平均する？','護符を出されていたら防がれる'],
+ shroom:['幻覚キノコの標的','誰に幻覚を見せる？（3手のあいだ手札が文字化けする）','護符を出されていたら防がれる']};
 function humanChoose(){return new Promise(res=>{sel=-1;$('hand').classList.remove('locked');renderHand();
  $('playBtn').disabled=true;$('playBtn').textContent='カードを選べ';$('hint').textContent='札をテーブルへドラッグするか、選んでボタンを押せ。';
  $('playBtn').onclick=async()=>{if(sel<0)return;const c=P[0].hand[sel];let tgt=null;
-  if(TARGETED.includes(c.t)&&ev.k!=='silence'){const others=alive().filter(x=>x!==P[0]);const [t1,t2,t3]=TGT_TXT[c.t];
+  if(hallu()){if(TARGETED.includes(c.t))tgt=pick(alive());}   // hallucinating: target is fully random (even yourself)
+  else if(TARGETED.includes(c.t)&&ev.k!=='silence'){const others=alive().filter(x=>x!==P[0]);const [t1,t2,t3]=TGT_TXT[c.t];
    const v=await modal(t1,`<p>${t2}<br><span style="color:var(--dim);font-size:12px">※${t3}</span></p>`,
     [...others.map(o=>({label:`<span style="color:${o.color}">●</span> ${o.name}（命${o.hp}）`,value:P.indexOf(o),cls:'ghost'})),{label:'やめる',value:-1}]);
    if(v<0)return;tgt=P[v];}
@@ -517,7 +544,8 @@ async function playTrick(){
  P.forEach(p=>{p.played=null;p.tgt=null;p.lose=false;p.res='';p.resCls='';p.val=null;});renderTable();await clearTable();
  for(const p of alive()){
   const ch=p.cpu?cpuChoose(p):await humanChoose();
-  p.played=p.hand.splice(ch.i,1)[0];p.tgt=ch.tgt||null;
+  p.played=p.hand.splice(ch.i,1)[0];p.tgt=ch.tgt||null;p.randT=p.shroom>0&&!!p.tgt;
+  if(p.shroom>0){p.shroom--;if(p.cpu)log(`${nm(p)} は幻覚の中、でたらめに札を出した…`,'sys');}
   if(!p.cpu){sel=-1;renderHand();}
   placeCard(P.indexOf(p),p.played);renderTable();await sleep(p.cpu?420:300);
  }
@@ -565,7 +593,7 @@ async function playTrick(){
  for(const p of pl.filter(p=>p.tgt&&TARGETED.some(t=>act(p,t)))){
   const t=p.tgt,k=p.played.t,charm=act(t,'charm');const nmK=SP[k].n;
   if(p.hp<=0)continue;
-  banner(`${nmK} → ${who(t)}`,k==='reaper'?'#ff4d5e':k==='vamp'?'#d04aff':'#5fd8d0');gm(`${p.name}の${nmK}が${t.name}に向けられた。`);await sleep(800);
+  banner(`${nmK} → ${who(t)}`,k==='reaper'?'#ff4d5e':k==='vamp'?'#d04aff':k==='shroom'?'#ff7ad9':'#5fd8d0');gm(p.randT?(t===p?`幻覚に惑わされ、${p.name}の${nmK}は自分自身に向いた！`:`幻覚の中、${p.name}の${nmK}はでたらめに${t.name}へ飛んだ。`):`${p.name}の${nmK}が${t.name}に向けられた。`);await sleep(800);
   if(!t.alive||t.hp<=0){log(`${nm(p)} の${nmK}は空を切った。`,'sys');continue;}
   if(k==='reaper'){
    if(ev.k==='mirror'){banner('鏡','#c8e6ff');await sleep(500);await damage(p,REAPER,'鏡の間で跳ね返った死神');}
@@ -575,6 +603,12 @@ async function playTrick(){
    if(ev.k==='mirror'){banner('鏡','#c8e6ff');await sleep(500);await damage(p,VAMP,'鏡の間で跳ね返った吸血');}
    else if(charm){gm(`${t.name}の護符が吸血を防いだ。`);banner('防御','#79e08a');await sleep(800);}
    else{const b=t.hp;await damage(t,VAMP,`${p.name}の吸血`);await heal(p,b-t.hp,'吸血で奪った命');renderTable();await sleep(600);}}
+  else if(k==='shroom'){
+   if(charm){gm(`${t.name}の護符が幻覚を防いだ。`);banner('防御','#79e08a');await sleep(800);}
+   else{t.shroom=3;banner('幻覚','#ff7ad9');gm(`${t.name}は幻覚に囚われた。次の3手、札の正体が見えない。`);
+    for(let i=0;i<8;i++)setTimeout(()=>tone(300+rnd(900),.09,'sine',.05),i*90);
+    if(t===P[0]){scrambleStorm(6);renderHand();$('hint').textContent='視界が歪む…どの札が何なのか分からない。';}
+    renderTable();await sleep(900);}}
   else if(k==='scale'){
    if(charm){gm(`${t.name}の護符が天秤を防いだ。`);banner('防御','#79e08a');await sleep(800);}
    else{const avg=Math.floor((p.hp+t.hp)/2);gm(`天秤が傾く…二人の命は${avg}にそろえられる。`);await sleep(600);
@@ -615,12 +649,13 @@ const RULES=`
  <li>毎ラウンド、主催者が<b>特別ルール</b>を1つ発動する。</li></ul>
  <h3>カード（数字1〜13・各4枚＋特殊札）</h3>
  <ul><li><b style="color:#ff4d5e">☠ 死神</b>：標的を1人選び命 -${REAPER}。</li>
- <li><b style="color:#79e08a">✚ 護符</b>：自分は安全。死神を跳ね返し、吸血・天秤・爆弾を防ぐ。</li>
+ <li><b style="color:#79e08a">✚ 護符</b>：自分は安全。死神を跳ね返し、吸血・天秤・爆弾・幻覚キノコを防ぐ。</li>
  <li><b style="color:#7fb7ff">⇅ 反転</b>：今回は<b>最も大きい数字</b>が、2番目に大きい数字との差だけ罰を受ける。2枚出たら打ち消し合う。</li>
  <li><b style="color:#d04aff">❦ 吸血</b>：標的の命を${VAMP}奪い、自分のものにする。</li>
  <li><b style="color:#e6c46a">◐ 偽札</b>：その回に出た<b>最も大きい数字</b>に化けて勝負に参加する（反転時は危険）。</li>
  <li><b style="color:#ff9a3c">✸ 爆弾</b>：自分以外の全員の命 -${BOMB}。</li>
  <li><b style="color:#c8c8c8">⊘ 封印</b>：他の特殊札をすべて無効にし「0」にする。</li>
+ <li><b style="color:#ff7ad9">🍄 幻覚キノコ</b>：相手1人に幻覚を見せる。その相手は次の3手、手札がすべて文字化けして何の札か分からなくなる（CPUは完全にでたらめに出す）。</li>
  <li><b style="color:#5fd8d0">⚖ 天秤</b>：相手1人と命を足して半分ずつにする（端数切り捨て）。</li>
  <li>偽札以外の特殊札を出した者は数字の勝負に参加しない。</li></ul>
  <h3>特別ルール</h3>
