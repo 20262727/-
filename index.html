@@ -89,7 +89,17 @@ h1 span{color:var(--red2)}
 .card.charm{color:#79e08a;border-color:#2a6a35}
 .card.rev{color:#7fb7ff;border-color:#2a4a7a}
 .card.vamp{color:#d04aff;border-color:#5a1f7a}.card.mimic{color:#e6c46a;border-color:#7a6a2a}
-.card.shroom{color:#ff7ad9;border-color:#7a2a6a}.card.nullify{color:#a0a8ff;border-color:#2f3a7a}
+.card.shroom{color:#ff7ad9;border-color:#7a2a6a}.card.nullify{color:#a0a8ff;border-color:#2f3a7a}.card.blind{color:#ffe600;border-color:#6a5a10}.card.blind .sn{font-size:9px;letter-spacing:0}
+/* half blindness overlay */
+#blind{position:fixed;inset:0;pointer-events:none;z-index:65;overflow:hidden}
+.brow{position:absolute;max-width:100%;animation:bIn .8s var(--d0) cubic-bezier(.2,.9,.3,1) both,bJ var(--t) steps(2) var(--dl) infinite}
+#blind.left .brow{left:0}#blind.right .brow{right:0}
+#blind.out .brow{animation:bOut .5s var(--d0) ease-in forwards}
+@keyframes bIn{from{max-width:0}to{max-width:100%}}
+@keyframes bOut{from{max-width:100%;opacity:1}to{max-width:0;opacity:.2}}
+@keyframes bJ{0%,100%{transform:translateX(0)}35%{transform:translateX(var(--j));filter:hue-rotate(60deg)}40%{transform:translateX(calc(var(--j) * -1.6)) scaleY(.6);filter:invert(1)}45%{transform:translateX(0);filter:none}75%{transform:translateX(calc(var(--j) * .4))}}
+.bseam{position:absolute;top:0;bottom:0;width:3px;background:#fff;box-shadow:0 0 14px #fff,0 0 30px #0ff;opacity:.5;animation:seam .3s steps(2) infinite}
+@keyframes seam{50%{opacity:.1;transform:translateX(4px)}}
 .card.nul{background:linear-gradient(160deg,#c9ccd6,#8f93a3);color:#2a2f4a}
 .tripping .wrap{animation:tripHue 2.8s linear infinite}
 @keyframes tripHue{0%{filter:hue-rotate(0)}50%{filter:hue-rotate(180deg) saturate(1.6)}100%{filter:hue-rotate(360deg)}}.card.shroom .sn{font-size:8.5px;letter-spacing:0}
@@ -308,7 +318,7 @@ header,.info,.event,.log{filter:blur(calc(var(--k)*var(--k)*2.6px)) contrast(cal
 const $=id=>document.getElementById(id);
 const MAXHP=20,TRICKS=4,REAPER=4,GREED=3,VAMP=3,BOMB=2;
 const SP={reaper:{i:'☠',n:'死神'},charm:{i:'✚',n:'護符'},rev:{i:'⇅',n:'反転'},
- vamp:{i:'❦',n:'吸血'},mimic:{i:'◐',n:'偽札'},bomb:{i:'✸',n:'爆弾'},seal:{i:'⊘',n:'封印'},scale:{i:'⚖\uFE0E',n:'天秤'},shroom:{i:'🍄',n:'幻覚キノコ'},nullify:{i:'✖',n:'無効化'}};
+ vamp:{i:'❦',n:'吸血'},mimic:{i:'◐',n:'偽札'},bomb:{i:'✸',n:'爆弾'},seal:{i:'⊘',n:'封印'},scale:{i:'⚖\uFE0E',n:'天秤'},shroom:{i:'🍄',n:'幻覚キノコ'},nullify:{i:'✖',n:'無効化'},blind:{i:'◑',n:'半分失明'}};
 const EVENTS=[
  {k:'calm',n:'平穏',d:'特別なルールはない。',w:2},
  {k:'blood',n:'血の宴',d:'このラウンドのダメージはすべて2倍。',w:2},
@@ -373,7 +383,7 @@ function modal(t,h,btns){return new Promise(res=>{$('mT').textContent=t;$('mB').
 /* cards */
 function deck(){const d=[];for(let v=1;v<=13;v++)for(let k=0;k<4;k++)d.push({t:'num',v});
  ['reaper','charm','rev'].forEach(t=>{for(let k=0;k<3;k++)d.push({t})});
- ['vamp','mimic','bomb','seal','scale','shroom','nullify'].forEach(t=>{for(let k=0;k<2;k++)d.push({t})});
+ ['vamp','mimic','bomb','seal','scale','shroom','nullify','blind'].forEach(t=>{for(let k=0;k<2;k++)d.push({t})});
  for(let i=d.length-1;i>0;i--){const j=rnd(i+1);[d[i],d[j]]=[d[j],d[i]];}return d;}
 function cardHTML(c,cls=''){
  if(!c)return '';
@@ -400,13 +410,28 @@ function breakGauge(prev,now){const sg=$('segs');const box=$('mylife');
 const hpColor=h=>h>=14?'#5fd07a':h>=8?'#e6c046':h>=4?'#ff7a3c':'#ff3b52';
 function renderTable(){$('seats').innerHTML=P.map((p,k)=>`
  <div class="seat pos${k} ${p.alive?'':'dead'}" id="s${k}">
-  <div class="nm"><span class="dot" style="background:${p.color}"></span>${p.name}${k===0?` <small>${p.no}</small>`:''}${p.shroom>0?' 🍄'+p.shroom:''}</div>
+  <div class="nm"><span class="dot" style="background:${p.color}"></span>${p.name}${k===0?` <small>${p.no}</small>`:''}${p.shroom>0?' 🍄'+p.shroom:''}${p.blind>0?' ◑'+p.blind:''}</div>
   <div class="gauge"><div class="fill" style="width:${p.hp/MAXHP*100}%;background:${hpColor(p.hp)};color:${hpColor(p.hp)}"></div></div>
   <div class="row"><span class="hpn" style="color:${hpColor(p.hp)}">${p.hp}<span style="color:#55525a">/${MAXHP}</span></span><span>札${p.hand.length}</span></div>
   <div class="res ${p.resCls||''}">${p.res||''}</div>
   <div class="x">脱落</div></div>`).join('');
  P.forEach((p,k)=>{const sl=$('slot'+k);if(sl){sl.classList.toggle('lose',!!p.lose);sl.classList.toggle('gone',!p.alive);}});
- $('rnd').textContent=round;$('trk').textContent=Math.min(trick+1,TRICKS);applyHP();renderMyLife();}
+ $('rnd').textContent=round;$('trk').textContent=Math.min(trick+1,TRICKS);applyHP();renderMyLife();updateBlind();}
+const SMPTE='linear-gradient(90deg,#c0c0c0 0 14.3%,#c0c000 0 28.6%,#00c0c0 0 42.9%,#00c000 0 57.1%,#c000c0 0 71.4%,#c00000 0 85.7%,#0000c0 0)';
+const SMPTE2='linear-gradient(90deg,#0000c0 0 14.3%,#131313 0 28.6%,#c000c0 0 42.9%,#131313 0 57.1%,#00c0c0 0 71.4%,#131313 0 85.7%,#c0c0c0 0)';
+let blindSide=null;
+function buildBlind(side){let o=$('blind');if(o)o.remove();o=document.createElement('div');o.id='blind';o.className=side;
+ let y=0,i=0,html='';const H=Math.max(window.innerHeight,700);
+ while(y<H){const h=3+(Math.random()<.7?rnd(18):18+rnd(40));const w=40+rnd(24);const t=Math.random();
+  const bg=t<.45?SMPTE:t<.6?SMPTE2:t<.82?pick(['#ff0030','#00e5ff','#ffe600','#ff00ff','#00ff66','#ffffff','#0000c0','#111']):
+   `repeating-linear-gradient(90deg,${pick(['#ff0030','#00e5ff','#ffe600','#ff00ff'])} 0 ${2+rnd(6)}px,#000 0 ${4+rnd(10)}px)`;
+  html+=`<div class="brow" style="top:${y}px;height:${h}px;width:${w}%;background:${bg};background-size:${60+rnd(140)}% 100%;background-position:${rnd(100)}% 0;`+
+   `--t:${(.4+Math.random()*2.4).toFixed(2)}s;--dl:${(-Math.random()*2).toFixed(2)}s;--d0:${(i*0.012).toFixed(3)}s;--j:${rnd(30)-15}px"></div>`;
+  y+=h;i++;}
+ html+=`<div class="bseam" style="${side}:50%"></div>`;o.innerHTML=html;document.body.appendChild(o);blindSide=side;}
+function updateBlind(){const me=P[0];const on=me&&me.alive&&me.blind>0;const o=$('blind');
+ if(on&&(!o||o.classList.contains('out')||blindSide!==me.blindSide))buildBlind(me.blindSide);
+ else if(!on&&o&&!o.classList.contains('out')){o.classList.add('out');setTimeout(()=>{const x=$('blind');if(x&&x.classList.contains('out'))x.remove();},900);blindSide=null;}}
 /* ===== 3D table cards ===== */
 const FROM=[[0,190,8],[-190,0,-30],[0,-190,170],[190,0,30]];
 function placeCard(k,c){const sl=$('slot'+k);sl.innerHTML='';const e=document.createElement('div');e.className='c3d land';
@@ -506,7 +531,7 @@ async function damage(p,n,why,raw){if(!p.alive||n<=0)return;const d=(ev.k==='blo
 async function heal(p,n,why){if(!p.alive||p.hp>=MAXHP||n<=0)return;const g=Math.min(n,MAXHP-p.hp);p.hp+=g;if(p===P[0])healScars(g*2);p.res=(p.res?p.res+' ':'')+'+'+g;p.resCls=p.resCls||'good';log(`${nm(p)} ― ${why}　命 +${g}`,'good');tone(1320,.12,'triangle');}
 
 /* CPU */
-const TARGETED=['reaper','vamp','scale','shroom','nullify'];
+const TARGETED=['reaper','vamp','scale','shroom','nullify','blind'];
 // weighted random: weaker players more likely, everyone (incl. you) has the same base chance
 function reaperTarget(p,others){const ws=others.map(o=>{let w=6+(MAXHP-o.hp)*.6;if(o.hp<=REAPER)w+=8;return w*(.6+Math.random()*.8);});
  let r=Math.random()*ws.reduce((a,b)=>a+b,0);for(let i=0;i<others.length;i++){if((r-=ws[i])<0)return others[i];}return others[others.length-1];}
@@ -515,8 +540,10 @@ function cpuChoose(p){const h=p.hand;const nums=h.map((c,i)=>[c,i]).filter(([c])
  const idx=t=>h.findIndex(c=>c.t===t);
  const others=alive().filter(x=>x!==p);
  const rev=ev.k==='night';const sil=ev.k==='silence';const mirror=ev.k==='mirror';
+ if(p.blind>0&&Math.random()<.5){const i=rnd(h.length);return{i,tgt:TARGETED.includes(h[i].t)?pick(others):null};}   // half blind: often misreads
  if(p.shroom>0){const i=rnd(h.length);return{i,tgt:TARGETED.includes(h[i].t)?pick(alive()):null,tripped:1};}   // hallucinating: fully random
  if(!sil){
+  if(idx('blind')>=0&&Math.random()<.4){const c=others.filter(o=>!(o.blind>0));return{i:idx('blind'),tgt:pick(c.length?c:others)};}
   if(idx('nullify')>=0&&Math.random()<.35)return{i:idx('nullify'),tgt:pick(others)};
   if(idx('shroom')>=0&&Math.random()<.45){const c=others.filter(o=>!(o.shroom>0));return{i:idx('shroom'),tgt:pick(c.length?c:others)};}
   if(p.hp<=6&&idx('charm')>=0&&Math.random()<.75)return{i:idx('charm')};
@@ -541,6 +568,7 @@ function cpuChoose(p){const h=p.hand;const nums=h.map((c,i)=>[c,i]).filter(([c])
 const TGT_TXT={reaper:['死神の標的','誰の命を刈り取る？（-'+REAPER+'）','護符を出されていたら跳ね返される'],
  vamp:['吸血の標的','誰の命を吸う？（相手 -'+VAMP+'、自分 +'+VAMP+'）','護符を出されていたら防がれる'],
  scale:['天秤の相手','誰と命を平均する？','護符を出されていたら防がれる'],
+ blind:['半分失明の標的','誰の視界を半分奪う？（4手のあいだ画面の左右どちらか半分が壊れたカラーバーに覆われる）','護符を出されていたら防がれる'],
  nullify:['無効化の標的','誰の特殊札を潰す？（特殊札を持っていれば1枚が「0」になる）','護符を出されていたら防がれる'],
  shroom:['幻覚キノコの標的','誰に幻覚を見せる？（3手のあいだ手札が文字化けする）','護符を出されていたら防がれる']};
 function humanChoose(){return new Promise(res=>{sel=-1;$('hand').classList.remove('locked');renderHand();
@@ -561,6 +589,7 @@ async function playTrick(){
  for(const p of alive()){
   const ch=p.cpu?cpuChoose(p):await humanChoose();
   p.played=p.hand.splice(ch.i,1)[0];p.tgt=ch.tgt||null;p.randT=p.shroom>0&&!!p.tgt;
+  if(p.blind>0)p.blind--;
   if(p.shroom>0){p.shroom--;if(p.cpu)log(`${nm(p)} は幻覚の中、でたらめに札を出した…`,'sys');}
   if(!p.cpu){sel=-1;renderHand();}
   placeCard(P.indexOf(p),p.played);renderTable();await sleep(p.cpu?420:300);
@@ -609,7 +638,7 @@ async function playTrick(){
  for(const p of pl.filter(p=>p.tgt&&TARGETED.some(t=>act(p,t)))){
   const t=p.tgt,k=p.played.t,charm=act(t,'charm');const nmK=SP[k].n;
   if(p.hp<=0)continue;
-  banner(`${nmK} → ${who(t)}`,k==='reaper'?'#ff4d5e':k==='vamp'?'#d04aff':k==='shroom'?'#ff7ad9':k==='nullify'?'#a0a8ff':'#5fd8d0');gm(p.randT?(t===p?`幻覚に惑わされ、${p.name}の${nmK}は自分自身に向いた！`:`幻覚の中、${p.name}の${nmK}はでたらめに${t.name}へ飛んだ。`):`${p.name}の${nmK}が${t.name}に向けられた。`);await sleep(800);
+  banner(`${nmK} → ${who(t)}`,k==='reaper'?'#ff4d5e':k==='vamp'?'#d04aff':k==='shroom'?'#ff7ad9':k==='nullify'?'#a0a8ff':k==='blind'?'#ffe600':'#5fd8d0');gm(p.randT?(t===p?`幻覚に惑わされ、${p.name}の${nmK}は自分自身に向いた！`:`幻覚の中、${p.name}の${nmK}はでたらめに${t.name}へ飛んだ。`):`${p.name}の${nmK}が${t.name}に向けられた。`);await sleep(800);
   if(!t.alive||t.hp<=0){log(`${nm(p)} の${nmK}は空を切った。`,'sys');continue;}
   if(k==='reaper'){
    if(ev.k==='mirror'){banner('鏡','#c8e6ff');await sleep(500);await damage(p,REAPER,'鏡の間で跳ね返った死神');}
@@ -619,6 +648,12 @@ async function playTrick(){
    if(ev.k==='mirror'){banner('鏡','#c8e6ff');await sleep(500);await damage(p,VAMP,'鏡の間で跳ね返った吸血');}
    else if(charm){gm(`${t.name}の護符が吸血を防いだ。`);banner('防御','#79e08a');await sleep(800);}
    else{const b=t.hp;await damage(t,VAMP,`${p.name}の吸血`);await heal(p,b-t.hp,'吸血で奪った命');renderTable();await sleep(600);}}
+  else if(k==='blind'){
+   if(charm){gm(`${t.name}の護符が失明を防いだ。`);banner('防御','#79e08a');await sleep(800);}
+   else{t.blind=4;t.blindSide=pick(['left','right']);banner('半分失明','#ffe600');
+    gm(`${t.name}の視界の${t.blindSide==='left'?'左':'右'}半分が壊れた。次の4手、半分しか見えない。`);
+    for(let i=0;i<10;i++)setTimeout(()=>tone(1000+rnd(2000),.03,'square',.05),i*45);tone(60,.5,'sawtooth',.12);
+    renderTable();await sleep(1000);}}
   else if(k==='nullify'){
    if(charm){gm(`${t.name}の護符が無効化を防いだ。`);banner('防御','#79e08a');await sleep(800);}
    else{const sp=t.hand.map((c,i)=>[c,i]).filter(([c])=>c.t!=='num');
@@ -673,12 +708,13 @@ const RULES=`
  <li>毎ラウンド、主催者が<b>特別ルール</b>を1つ発動する。</li></ul>
  <h3>カード（数字1〜13・各4枚＋特殊札）</h3>
  <ul><li><b style="color:#ff4d5e">☠ 死神</b>：標的を1人選び命 -${REAPER}。</li>
- <li><b style="color:#79e08a">✚ 護符</b>：自分は安全。死神を跳ね返し、吸血・天秤・爆弾・幻覚キノコ・無効化を防ぐ。</li>
+ <li><b style="color:#79e08a">✚ 護符</b>：自分は安全。死神を跳ね返し、吸血・天秤・爆弾・幻覚キノコ・無効化・半分失明を防ぐ。</li>
  <li><b style="color:#7fb7ff">⇅ 反転</b>：今回は<b>最も大きい数字</b>が、2番目に大きい数字との差だけ罰を受ける。2枚出たら打ち消し合う。</li>
  <li><b style="color:#d04aff">❦ 吸血</b>：標的の命を${VAMP}奪い、自分のものにする。</li>
  <li><b style="color:#e6c46a">◐ 偽札</b>：その回に出た<b>最も大きい数字</b>に化けて勝負に参加する（反転時は危険）。</li>
  <li><b style="color:#ff9a3c">✸ 爆弾</b>：自分以外の全員の命 -${BOMB}。</li>
  <li><b style="color:#c8c8c8">⊘ 封印</b>：他の特殊札をすべて無効にし「0」にする。</li>
+ <li><b style="color:#ffe600">◑ 半分失明</b>：相手1人の視界を奪う。次の4手のあいだ、画面の左右どちらか半分が壊れたカラーバーに侵食される（CPUは半分の確率で札を見誤る）。</li>
  <li><b style="color:#a0a8ff">✖ 無効化</b>：相手1人を選ぶ。その相手が手札に特殊札を持っていれば、ランダムに1枚が「0」の札に変わる。</li>
  <li><b style="color:#ff7ad9">🍄 幻覚キノコ</b>：相手1人に幻覚を見せる。その相手は次の3手、手札も画面の文字もすべて文字化けして何の札か分からなくなる（CPUは完全にでたらめに出す）。</li>
  <li><b style="color:#5fd8d0">⚖ 天秤</b>：相手1人と命を足して半分ずつにする（端数切り捨て）。</li>
