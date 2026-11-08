@@ -89,7 +89,10 @@ h1 span{color:var(--red2)}
 .card.charm{color:#79e08a;border-color:#2a6a35}
 .card.rev{color:#7fb7ff;border-color:#2a4a7a}
 .card.vamp{color:#d04aff;border-color:#5a1f7a}.card.mimic{color:#e6c46a;border-color:#7a6a2a}
-.card.shroom{color:#ff7ad9;border-color:#7a2a6a}.card.shroom .sn{font-size:8.5px;letter-spacing:0}
+.card.shroom{color:#ff7ad9;border-color:#7a2a6a}.card.nullify{color:#a0a8ff;border-color:#2f3a7a}
+.card.nul{background:linear-gradient(160deg,#c9ccd6,#8f93a3);color:#2a2f4a}
+.tripping .wrap{animation:tripHue 2.8s linear infinite}
+@keyframes tripHue{0%{filter:hue-rotate(0)}50%{filter:hue-rotate(180deg) saturate(1.6)}100%{filter:hue-rotate(360deg)}}.card.shroom .sn{font-size:8.5px;letter-spacing:0}
 .card.garb{background:linear-gradient(160deg,hsl(var(--h) 70% 82%),hsl(calc(var(--h) + 110deg) 60% 55%));color:#140014;font-size:24px;
  text-shadow:2px 0 rgba(255,0,80,.6),-2px 0 rgba(0,200,255,.6);animation:garb .5s steps(3) infinite}
 .card.garb .c,.card.garb .c2{font-size:11px}
@@ -305,7 +308,7 @@ header,.info,.event,.log{filter:blur(calc(var(--k)*var(--k)*2.6px)) contrast(cal
 const $=id=>document.getElementById(id);
 const MAXHP=20,TRICKS=4,REAPER=4,GREED=3,VAMP=3,BOMB=2;
 const SP={reaper:{i:'☠',n:'死神'},charm:{i:'✚',n:'護符'},rev:{i:'⇅',n:'反転'},
- vamp:{i:'❦',n:'吸血'},mimic:{i:'◐',n:'偽札'},bomb:{i:'✸',n:'爆弾'},seal:{i:'⊘',n:'封印'},scale:{i:'⚖\uFE0E',n:'天秤'},shroom:{i:'🍄',n:'幻覚キノコ'}};
+ vamp:{i:'❦',n:'吸血'},mimic:{i:'◐',n:'偽札'},bomb:{i:'✸',n:'爆弾'},seal:{i:'⊘',n:'封印'},scale:{i:'⚖\uFE0E',n:'天秤'},shroom:{i:'🍄',n:'幻覚キノコ'},nullify:{i:'✖',n:'無効化'}};
 const EVENTS=[
  {k:'calm',n:'平穏',d:'特別なルールはない。',w:2},
  {k:'blood',n:'血の宴',d:'このラウンドのダメージはすべて2倍。',w:2},
@@ -370,12 +373,12 @@ function modal(t,h,btns){return new Promise(res=>{$('mT').textContent=t;$('mB').
 /* cards */
 function deck(){const d=[];for(let v=1;v<=13;v++)for(let k=0;k<4;k++)d.push({t:'num',v});
  ['reaper','charm','rev'].forEach(t=>{for(let k=0;k<3;k++)d.push({t})});
- ['vamp','mimic','bomb','seal','scale','shroom'].forEach(t=>{for(let k=0;k<2;k++)d.push({t})});
+ ['vamp','mimic','bomb','seal','scale','shroom','nullify'].forEach(t=>{for(let k=0;k<2;k++)d.push({t})});
  for(let i=d.length-1;i>0;i--){const j=rnd(i+1);[d[i],d[j]]=[d[j],d[i]];}return d;}
 function cardHTML(c,cls=''){
  if(!c)return '';
  if(c.back)return `<div class="card back ${cls}"></div>`;
- if(c.t==='num')return `<div class="card ${c.v<=3?'low':''} ${c.mut?'mut':''} ${c.mim?'mim':''} ${cls}"><span class="c">${c.v}</span>${c.v}<span class="c2">${c.v}</span>${c.mut?'<span class="tag">狂</span>':c.mim?'<span class="tag" style="color:#8a6a10">偽</span>':''}</div>`;
+ if(c.t==='num')return `<div class="card ${c.v<=3?'low':''} ${c.mut?'mut':''} ${c.mim?'mim':''} ${c.nul?'nul':''} ${cls}"><span class="c">${c.v}</span>${c.v}<span class="c2">${c.v}</span>${c.mut?'<span class="tag">狂</span>':c.mim?'<span class="tag" style="color:#8a6a10">偽</span>':c.nul?'<span class="tag" style="color:#2f3a7a">無</span>':''}</div>`;
  return `<div class="card sp ${c.t} ${cls}">${SP[c.t].i}<span class="sn">${SP[c.t].n}</span></div>`;}
 const cname=c=>c.t==='num'?`「${c.v}」`:`「${SP[c.t].n}」`;
 
@@ -476,7 +479,18 @@ function bindDrag(el,i){el.addEventListener('pointerdown',e=>{if($('hand').class
 const GARB=[...'▓▒░█#@%&?!¥$ｦｱｳｴｵﾀﾁﾂ※〓◆◇◎☆♪∀∂∇Ж⌘'];
 const garbTxt=n=>Array.from({length:n},()=>pick(GARB)).join('');
 const garbCard=cls=>`<div class="card garb ${cls}" style="--h:${rnd(360)}deg"><span class="c">${garbTxt(1)}</span><span class="gm">${garbTxt(1+rnd(2))}</span><span class="c2">${garbTxt(1)}</span></div>`;
-const hallu=()=>P[0]&&P[0].shroom>0;
+const hallu=()=>P[0]&&P[0].alive&&P[0].shroom>0;
+// while you hallucinate, every piece of UI text stays garbled
+const halluMap=new Map();
+(function hloop(){
+ if(hallu()){for(const root of [$('wrap'),document.querySelector('#ov .md'),$('banner'),$('cap')]){
+   const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:t=>t.nodeValue.trim()?1:2});
+   while(w.nextNode()){const t=w.currentNode;if(!halluMap.has(t))halluMap.set(t,orig.has(t)?orig.get(t):t.nodeValue);
+    t.nodeValue=[...halluMap.get(t)].map(c=>c.trim()?pick(Math.random()<.5?GCH:GARB):c).join('');}}
+  halluMap.forEach((o,t)=>{if(!t.isConnected)halluMap.delete(t);});
+  document.body.classList.add('tripping');}
+ else if(halluMap.size||document.body.classList.contains('tripping')){halluMap.forEach((o,t)=>{t.nodeValue=o;});halluMap.clear();document.body.classList.remove('tripping');}
+ setTimeout(hloop,130);})();
 setInterval(()=>{if(!hallu())return;document.querySelectorAll('#hand .card.garb').forEach(e=>{e.style.setProperty('--h',rnd(360)+'deg');
  e.querySelectorAll('.c,.c2').forEach(x=>x.textContent=garbTxt(1));const g=e.querySelector('.gm');if(g)g.textContent=garbTxt(1+rnd(2));});
  if(sel>=0&&!$('playBtn').disabled&&!$('hand').classList.contains('locked'))$('playBtn').textContent=`「${garbTxt(3)}」を出す`;},200);
@@ -492,7 +506,7 @@ async function damage(p,n,why,raw){if(!p.alive||n<=0)return;const d=(ev.k==='blo
 async function heal(p,n,why){if(!p.alive||p.hp>=MAXHP||n<=0)return;const g=Math.min(n,MAXHP-p.hp);p.hp+=g;if(p===P[0])healScars(g*2);p.res=(p.res?p.res+' ':'')+'+'+g;p.resCls=p.resCls||'good';log(`${nm(p)} ― ${why}　命 +${g}`,'good');tone(1320,.12,'triangle');}
 
 /* CPU */
-const TARGETED=['reaper','vamp','scale','shroom'];
+const TARGETED=['reaper','vamp','scale','shroom','nullify'];
 // weighted random: weaker players more likely, everyone (incl. you) has the same base chance
 function reaperTarget(p,others){const ws=others.map(o=>{let w=6+(MAXHP-o.hp)*.6;if(o.hp<=REAPER)w+=8;return w*(.6+Math.random()*.8);});
  let r=Math.random()*ws.reduce((a,b)=>a+b,0);for(let i=0;i<others.length;i++){if((r-=ws[i])<0)return others[i];}return others[others.length-1];}
@@ -503,6 +517,7 @@ function cpuChoose(p){const h=p.hand;const nums=h.map((c,i)=>[c,i]).filter(([c])
  const rev=ev.k==='night';const sil=ev.k==='silence';const mirror=ev.k==='mirror';
  if(p.shroom>0){const i=rnd(h.length);return{i,tgt:TARGETED.includes(h[i].t)?pick(alive()):null,tripped:1};}   // hallucinating: fully random
  if(!sil){
+  if(idx('nullify')>=0&&Math.random()<.35)return{i:idx('nullify'),tgt:pick(others)};
   if(idx('shroom')>=0&&Math.random()<.45){const c=others.filter(o=>!(o.shroom>0));return{i:idx('shroom'),tgt:pick(c.length?c:others)};}
   if(p.hp<=6&&idx('charm')>=0&&Math.random()<.75)return{i:idx('charm')};
   if(idx('scale')>=0){const top=richest(others);if(top.hp-p.hp>=6&&Math.random()<.8)return{i:idx('scale'),tgt:top};}
@@ -526,6 +541,7 @@ function cpuChoose(p){const h=p.hand;const nums=h.map((c,i)=>[c,i]).filter(([c])
 const TGT_TXT={reaper:['死神の標的','誰の命を刈り取る？（-'+REAPER+'）','護符を出されていたら跳ね返される'],
  vamp:['吸血の標的','誰の命を吸う？（相手 -'+VAMP+'、自分 +'+VAMP+'）','護符を出されていたら防がれる'],
  scale:['天秤の相手','誰と命を平均する？','護符を出されていたら防がれる'],
+ nullify:['無効化の標的','誰の特殊札を潰す？（特殊札を持っていれば1枚が「0」になる）','護符を出されていたら防がれる'],
  shroom:['幻覚キノコの標的','誰に幻覚を見せる？（3手のあいだ手札が文字化けする）','護符を出されていたら防がれる']};
 function humanChoose(){return new Promise(res=>{sel=-1;$('hand').classList.remove('locked');renderHand();
  $('playBtn').disabled=true;$('playBtn').textContent='カードを選べ';$('hint').textContent='札をテーブルへドラッグするか、選んでボタンを押せ。';
@@ -593,7 +609,7 @@ async function playTrick(){
  for(const p of pl.filter(p=>p.tgt&&TARGETED.some(t=>act(p,t)))){
   const t=p.tgt,k=p.played.t,charm=act(t,'charm');const nmK=SP[k].n;
   if(p.hp<=0)continue;
-  banner(`${nmK} → ${who(t)}`,k==='reaper'?'#ff4d5e':k==='vamp'?'#d04aff':k==='shroom'?'#ff7ad9':'#5fd8d0');gm(p.randT?(t===p?`幻覚に惑わされ、${p.name}の${nmK}は自分自身に向いた！`:`幻覚の中、${p.name}の${nmK}はでたらめに${t.name}へ飛んだ。`):`${p.name}の${nmK}が${t.name}に向けられた。`);await sleep(800);
+  banner(`${nmK} → ${who(t)}`,k==='reaper'?'#ff4d5e':k==='vamp'?'#d04aff':k==='shroom'?'#ff7ad9':k==='nullify'?'#a0a8ff':'#5fd8d0');gm(p.randT?(t===p?`幻覚に惑わされ、${p.name}の${nmK}は自分自身に向いた！`:`幻覚の中、${p.name}の${nmK}はでたらめに${t.name}へ飛んだ。`):`${p.name}の${nmK}が${t.name}に向けられた。`);await sleep(800);
   if(!t.alive||t.hp<=0){log(`${nm(p)} の${nmK}は空を切った。`,'sys');continue;}
   if(k==='reaper'){
    if(ev.k==='mirror'){banner('鏡','#c8e6ff');await sleep(500);await damage(p,REAPER,'鏡の間で跳ね返った死神');}
@@ -603,6 +619,14 @@ async function playTrick(){
    if(ev.k==='mirror'){banner('鏡','#c8e6ff');await sleep(500);await damage(p,VAMP,'鏡の間で跳ね返った吸血');}
    else if(charm){gm(`${t.name}の護符が吸血を防いだ。`);banner('防御','#79e08a');await sleep(800);}
    else{const b=t.hp;await damage(t,VAMP,`${p.name}の吸血`);await heal(p,b-t.hp,'吸血で奪った命');renderTable();await sleep(600);}}
+  else if(k==='nullify'){
+   if(charm){gm(`${t.name}の護符が無効化を防いだ。`);banner('防御','#79e08a');await sleep(800);}
+   else{const sp=t.hand.map((c,i)=>[c,i]).filter(([c])=>c.t!=='num');
+    if(!sp.length){gm(`${t.name}は特殊札を持っていなかった。無効化は空振りだ。`);await sleep(800);}
+    else{const [c,i]=pick(sp);t.hand[i]={t:'num',v:0,nul:1};banner('無効化','#a0a8ff');tone(160,.3,'square',.07);tone(90,.4,'sawtooth',.06);
+     if(t===P[0]){gm(`あなたの「${SP[c.t].n}」は無効化され、「0」になった。`);renderHand();}
+     else gm(`${t.name}の手札の特殊札が1枚、「0」に変えられた。`);
+     t.res=(t.res?t.res+' ':'')+'札→0';renderTable();await sleep(1000);}}}
   else if(k==='shroom'){
    if(charm){gm(`${t.name}の護符が幻覚を防いだ。`);banner('防御','#79e08a');await sleep(800);}
    else{t.shroom=3;banner('幻覚','#ff7ad9');gm(`${t.name}は幻覚に囚われた。次の3手、札の正体が見えない。`);
@@ -649,13 +673,14 @@ const RULES=`
  <li>毎ラウンド、主催者が<b>特別ルール</b>を1つ発動する。</li></ul>
  <h3>カード（数字1〜13・各4枚＋特殊札）</h3>
  <ul><li><b style="color:#ff4d5e">☠ 死神</b>：標的を1人選び命 -${REAPER}。</li>
- <li><b style="color:#79e08a">✚ 護符</b>：自分は安全。死神を跳ね返し、吸血・天秤・爆弾・幻覚キノコを防ぐ。</li>
+ <li><b style="color:#79e08a">✚ 護符</b>：自分は安全。死神を跳ね返し、吸血・天秤・爆弾・幻覚キノコ・無効化を防ぐ。</li>
  <li><b style="color:#7fb7ff">⇅ 反転</b>：今回は<b>最も大きい数字</b>が、2番目に大きい数字との差だけ罰を受ける。2枚出たら打ち消し合う。</li>
  <li><b style="color:#d04aff">❦ 吸血</b>：標的の命を${VAMP}奪い、自分のものにする。</li>
  <li><b style="color:#e6c46a">◐ 偽札</b>：その回に出た<b>最も大きい数字</b>に化けて勝負に参加する（反転時は危険）。</li>
  <li><b style="color:#ff9a3c">✸ 爆弾</b>：自分以外の全員の命 -${BOMB}。</li>
  <li><b style="color:#c8c8c8">⊘ 封印</b>：他の特殊札をすべて無効にし「0」にする。</li>
- <li><b style="color:#ff7ad9">🍄 幻覚キノコ</b>：相手1人に幻覚を見せる。その相手は次の3手、手札がすべて文字化けして何の札か分からなくなる（CPUは完全にでたらめに出す）。</li>
+ <li><b style="color:#a0a8ff">✖ 無効化</b>：相手1人を選ぶ。その相手が手札に特殊札を持っていれば、ランダムに1枚が「0」の札に変わる。</li>
+ <li><b style="color:#ff7ad9">🍄 幻覚キノコ</b>：相手1人に幻覚を見せる。その相手は次の3手、手札も画面の文字もすべて文字化けして何の札か分からなくなる（CPUは完全にでたらめに出す）。</li>
  <li><b style="color:#5fd8d0">⚖ 天秤</b>：相手1人と命を足して半分ずつにする（端数切り捨て）。</li>
  <li>偽札以外の特殊札を出した者は数字の勝負に参加しない。</li></ul>
  <h3>特別ルール</h3>
