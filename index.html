@@ -90,16 +90,22 @@ h1 span{color:var(--red2)}
 .card.rev{color:#7fb7ff;border-color:#2a4a7a}
 .card.vamp{color:#d04aff;border-color:#5a1f7a}.card.mimic{color:#e6c46a;border-color:#7a6a2a}
 .card.shroom{color:#ff7ad9;border-color:#7a2a6a}.card.nullify{color:#a0a8ff;border-color:#2f3a7a}.card.blind{color:#ffe600;border-color:#6a5a10}.card.blind .sn{font-size:9px;letter-spacing:0}
-/* half blindness overlay */
+/* half blindness overlay : broken LCD */
 #blind{position:fixed;inset:0;pointer-events:none;z-index:65;overflow:hidden}
-.brow{position:absolute;max-width:100%;animation:bIn .8s var(--d0) cubic-bezier(.2,.9,.3,1) both,bJ var(--t) steps(2) var(--dl) infinite}
-#blind.left .brow{left:0}#blind.right .brow{right:0}
-#blind.out .brow{animation:bOut .5s var(--d0) ease-in forwards}
-@keyframes bIn{from{max-width:0}to{max-width:100%}}
-@keyframes bOut{from{max-width:100%;opacity:1}to{max-width:0;opacity:.2}}
-@keyframes bJ{0%,100%{transform:translateX(0)}35%{transform:translateX(var(--j));filter:hue-rotate(60deg)}40%{transform:translateX(calc(var(--j) * -1.6)) scaleY(.6);filter:invert(1)}45%{transform:translateX(0);filter:none}75%{transform:translateX(calc(var(--j) * .4))}}
-.bseam{position:absolute;top:0;bottom:0;width:3px;background:#fff;box-shadow:0 0 14px #fff,0 0 30px #0ff;opacity:.5;animation:seam .3s steps(2) infinite}
-@keyframes seam{50%{opacity:.1;transform:translateX(4px)}}
+.bbase{position:absolute;top:0;bottom:0;width:50%;background:#030305;
+ background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px);animation:bbIn .9s cubic-bezier(.2,.9,.3,1) both}
+#blind.left .bbase{left:0}#blind.right .bbase{right:0}
+@keyframes bbIn{from{width:0}to{width:50%}}
+.vl{position:absolute;top:0;bottom:0;opacity:0;
+ animation:vlIn .25s var(--d0) steps(2) forwards,vlH var(--ht) steps(1) var(--hd) infinite,vlF var(--ft) steps(2) var(--hd) infinite}
+.vl.fade{-webkit-mask-image:linear-gradient(180deg,#000 var(--m1),transparent var(--m2),#000 var(--m3));mask-image:linear-gradient(180deg,#000 var(--m1),transparent var(--m2),#000 var(--m3))}
+@keyframes vlIn{to{opacity:var(--op)}}
+@keyframes vlH{0%{filter:hue-rotate(0) brightness(1)}20%{filter:hue-rotate(70deg) brightness(1.3)}45%{filter:hue-rotate(160deg)}70%{filter:hue-rotate(250deg) brightness(.7)}85%{filter:hue-rotate(310deg) brightness(1.6)}}
+@keyframes vlF{0%,100%{transform:translateX(0)}50%{transform:translateX(var(--jx))}}
+#blind.out .bbase{animation:bbOut .6s ease-in forwards}
+#blind.out .vl{animation:vlOut .45s var(--d0) steps(3) forwards}
+@keyframes bbOut{from{width:50%}to{width:0}}
+@keyframes vlOut{to{opacity:0}}
 .card.nul{background:linear-gradient(160deg,#c9ccd6,#8f93a3);color:#2a2f4a}
 .tripping .wrap{animation:tripHue 2.8s linear infinite}
 @keyframes tripHue{0%{filter:hue-rotate(0)}50%{filter:hue-rotate(180deg) saturate(1.6)}100%{filter:hue-rotate(360deg)}}.card.shroom .sn{font-size:8.5px;letter-spacing:0}
@@ -421,14 +427,24 @@ const SMPTE='linear-gradient(90deg,#c0c0c0 0 14.3%,#c0c000 0 28.6%,#00c0c0 0 42.
 const SMPTE2='linear-gradient(90deg,#0000c0 0 14.3%,#131313 0 28.6%,#c000c0 0 42.9%,#131313 0 57.1%,#00c0c0 0 71.4%,#131313 0 85.7%,#c0c0c0 0)';
 let blindSide=null;
 function buildBlind(side){let o=$('blind');if(o)o.remove();o=document.createElement('div');o.id='blind';o.className=side;
- let y=0,i=0,html='';const H=Math.max(window.innerHeight,700);
- while(y<H){const h=3+(Math.random()<.7?rnd(18):18+rnd(40));const w=40+rnd(24);const t=Math.random();
-  const bg=t<.45?SMPTE:t<.6?SMPTE2:t<.82?pick(['#ff0030','#00e5ff','#ffe600','#ff00ff','#00ff66','#ffffff','#0000c0','#111']):
-   `repeating-linear-gradient(90deg,${pick(['#ff0030','#00e5ff','#ffe600','#ff00ff'])} 0 ${2+rnd(6)}px,#000 0 ${4+rnd(10)}px)`;
-  html+=`<div class="brow" style="top:${y}px;height:${h}px;width:${w}%;background:${bg};background-size:${60+rnd(140)}% 100%;background-position:${rnd(100)}% 0;`+
-   `--t:${(.4+Math.random()*2.4).toFixed(2)}s;--dl:${(-Math.random()*2).toFixed(2)}s;--d0:${(i*0.012).toFixed(3)}s;--j:${rnd(30)-15}px"></div>`;
-  y+=h;i++;}
- html+=`<div class="bseam" style="${side}:50%"></div>`;o.innerHTML=html;document.body.appendChild(o);blindSide=side;}
+ const COLS=['#00e5ff','#ff00ff','#ffe600','#00ff66','#7a3cff','#ffffff','#ff3060','#3d5cff','#9a6bff','#00c0c0','#c000c0','#56ff9a'];
+ let html='<div class="bbase"></div>';const n=74;
+ for(let i=0;i<n;i++){
+  // distance from the screen edge (0 = edge, 50 = middle, a few leak past the middle)
+  const d=Math.random()<.92?Math.random()*50:50+Math.random()*7;
+  const x=side==='left'?d:100-d;
+  const r=Math.random();const w=r<.62?1:r<.85?2+rnd(2):r<.95?4+rnd(6):10+rnd(16);
+  const c=pick(COLS);
+  const bg=w>=10?`linear-gradient(90deg,${c},${pick(COLS)} 40%,${pick(COLS)})`:c;
+  const op=w>=10?(.55+Math.random()*.35):(.45+Math.random()*.55);
+  const fade=Math.random()<.3;const m1=rnd(60);
+  html+=`<div class="vl${fade?' fade':''}" style="left:calc(${x.toFixed(2)}% - ${side==='right'?w:0}px);width:${w}px;background:${bg};`+
+   `box-shadow:0 0 ${w>=4?6:3}px ${c};--op:${op.toFixed(2)};--d0:${(d/50*0.85+Math.random()*.1).toFixed(2)}s;`+
+   `--ht:${(.6+Math.random()*3).toFixed(2)}s;--hd:${(-Math.random()*3).toFixed(2)}s;--ft:${(.15+Math.random()*1.2).toFixed(2)}s;--jx:${rnd(5)-2}px;`+
+   `--m1:${m1}%;--m2:${m1+8+rnd(20)}%;--m3:${Math.min(100,m1+30+rnd(40))}%"></div>`;}
+ // bright dead line on the boundary
+ html+=`<div class="vl" style="left:calc(50% - 1px);width:2px;background:#fff;box-shadow:0 0 10px #fff,0 0 22px #0ff;--op:.85;--d0:.8s;--ht:1.3s;--hd:0s;--ft:.2s;--jx:3px"></div>`;
+ o.innerHTML=html;document.body.appendChild(o);blindSide=side;}
 function updateBlind(){const me=P[0];const on=me&&me.alive&&me.blind>0;const o=$('blind');
  if(on&&(!o||o.classList.contains('out')||blindSide!==me.blindSide))buildBlind(me.blindSide);
  else if(!on&&o&&!o.classList.contains('out')){o.classList.add('out');setTimeout(()=>{const x=$('blind');if(x&&x.classList.contains('out'))x.remove();},900);blindSide=null;}}
@@ -568,7 +584,7 @@ function cpuChoose(p){const h=p.hand;const nums=h.map((c,i)=>[c,i]).filter(([c])
 const TGT_TXT={reaper:['死神の標的','誰の命を刈り取る？（-'+REAPER+'）','護符を出されていたら跳ね返される'],
  vamp:['吸血の標的','誰の命を吸う？（相手 -'+VAMP+'、自分 +'+VAMP+'）','護符を出されていたら防がれる'],
  scale:['天秤の相手','誰と命を平均する？','護符を出されていたら防がれる'],
- blind:['半分失明の標的','誰の視界を半分奪う？（4手のあいだ画面の左右どちらか半分が壊れたカラーバーに覆われる）','護符を出されていたら防がれる'],
+ blind:['半分失明の標的','誰の視界を半分奪う？（4手のあいだ画面の左右どちらか半分が割れた液晶のような縦線に覆われる）','護符を出されていたら防がれる'],
  nullify:['無効化の標的','誰の特殊札を潰す？（特殊札を持っていれば1枚が「0」になる）','護符を出されていたら防がれる'],
  shroom:['幻覚キノコの標的','誰に幻覚を見せる？（3手のあいだ手札が文字化けする）','護符を出されていたら防がれる']};
 function humanChoose(){return new Promise(res=>{sel=-1;$('hand').classList.remove('locked');renderHand();
@@ -714,7 +730,7 @@ const RULES=`
  <li><b style="color:#e6c46a">◐ 偽札</b>：その回に出た<b>最も大きい数字</b>に化けて勝負に参加する（反転時は危険）。</li>
  <li><b style="color:#ff9a3c">✸ 爆弾</b>：自分以外の全員の命 -${BOMB}。</li>
  <li><b style="color:#c8c8c8">⊘ 封印</b>：他の特殊札をすべて無効にし「0」にする。</li>
- <li><b style="color:#ffe600">◑ 半分失明</b>：相手1人の視界を奪う。次の4手のあいだ、画面の左右どちらか半分が壊れたカラーバーに侵食される（CPUは半分の確率で札を見誤る）。</li>
+ <li><b style="color:#ffe600">◑ 半分失明</b>：相手1人の視界を奪う。次の4手のあいだ、画面の左右どちらか半分が、割れた液晶のような色の縦線に侵食される（CPUは半分の確率で札を見誤る）。</li>
  <li><b style="color:#a0a8ff">✖ 無効化</b>：相手1人を選ぶ。その相手が手札に特殊札を持っていれば、ランダムに1枚が「0」の札に変わる。</li>
  <li><b style="color:#ff7ad9">🍄 幻覚キノコ</b>：相手1人に幻覚を見せる。その相手は次の3手、手札も画面の文字もすべて文字化けして何の札か分からなくなる（CPUは完全にでたらめに出す）。</li>
  <li><b style="color:#5fd8d0">⚖ 天秤</b>：相手1人と命を足して半分ずつにする（端数切り捨て）。</li>
