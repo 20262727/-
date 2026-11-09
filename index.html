@@ -34,7 +34,6 @@ h1 span{color:var(--red2)}
 .emblem svg{width:100%;height:100%}
 .slot3d{position:absolute;width:52px;height:74px;margin:-37px 0 0 -26px;transform-style:preserve-3d}
 .slot3d::before{content:"";position:absolute;inset:0;border-radius:7px;border:1px dashed rgba(255,255,255,.12)}
-#slot0{left:50%;top:80%}#slot1{left:23%;top:50%}#slot2{left:50%;top:21%}#slot3{left:77%;top:50%}
 .slot3d.gone::before{border-color:transparent}
 .c3d{position:absolute;inset:0;transform-style:preserve-3d;-webkit-transform-style:preserve-3d;transform:translateZ(1px) rotateY(180deg)}
 .c3d .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
@@ -57,8 +56,7 @@ h1 span{color:var(--red2)}
 .card .tag{position:absolute;bottom:3px;left:4px;font-family:"Noto Sans JP";font-size:9px;font-weight:900;color:#b0102a;background:#fff3;border-radius:3px;padding:0 3px}
 #seats{position:absolute;inset:0;pointer-events:none}
 .seat{position:absolute;width:82px;text-align:center;padding:4px 3px 3px;border-radius:9px;background:rgba(16,10,12,.88);border:1px solid #2c2a30;transition:filter .25s,opacity .25s}
-.seat.pos0{left:calc(50% - 62px);width:124px;bottom:0}
-.seat.pos1{left:0;top:132px}.seat.pos2{left:calc(50% - 41px);top:0}.seat.pos3{right:0;top:132px}
+.seat.many .nm{font-size:11px}
 .seat.dead{filter:grayscale(1);opacity:.4}
 .seat .nm{font-size:12px;font-weight:900;display:flex;justify-content:center;align-items:center;gap:4px;white-space:nowrap}
 .seat .nm small{font-size:9px;color:var(--dim);font-weight:400}
@@ -305,7 +303,7 @@ header,.info,.event,.log{filter:blur(calc(var(--k)*var(--k)*2.6px)) contrast(cal
 </g>
 <path d="M300 420 q0 30 -6 52 q-4 10 -8 0 q-4 -22 -4 -52 z" fill="#c8102e" transform="rotate(9 256 256)"/>
 </svg></div>
-   <div class="slot3d" id="slot0"></div><div class="slot3d" id="slot1"></div><div class="slot3d" id="slot2"></div><div class="slot3d" id="slot3"></div></div></div>
+   </div></div>
   <div id="seats"></div>
  </div>
  <div class="mylife" id="mylife"><div class="crackline"></div><div class="ml-h"><span>YOUR LIFE</span><span id="mlN">20/20</span></div><div class="segs" id="segs"></div></div>
@@ -423,7 +421,7 @@ function breakGauge(prev,now){const sg=$('segs');const box=$('mylife');
    tone(1800-n*60,.05,'square',.05);tone(300+rnd(200),.08,'sawtooth',.04);},n*55);}}
 const hpColor=h=>h>=14?'#5fd07a':h>=8?'#e6c046':h>=4?'#ff7a3c':'#ff3b52';
 function renderTable(){$('seats').innerHTML=P.map((p,k)=>`
- <div class="seat pos${k} ${p.alive?'':'dead'}" id="s${k}">
+ <div class="seat ${P.length>4&&k?'many':''} ${p.alive?'':'dead'}" id="s${k}" style="${seatStyle(k)}">
   <div class="nm"><span class="dot" style="background:${p.color}"></span>${p.name}${k===0?` <small>${p.no}</small>`:''}${p.shroom>0?' 🍄'+p.shroom:''}${p.blind>0?' ◑'+p.blind:''}</div>
   <div class="gauge"><div class="fill" style="width:${p.hp/MAXHP*100}%;background:${hpColor(p.hp)};color:${hpColor(p.hp)}"></div></div>
   <div class="row"><span class="hpn" style="color:${hpColor(p.hp)}">${p.hp}<span style="color:#55525a">/${MAXHP}</span></span><span>札${p.hand.length}</span></div>
@@ -457,9 +455,17 @@ function updateBlind(){const me=P[0];const on=me&&me.alive&&me.blind>0;const o=$
  if(on&&(!o||o.classList.contains('out')||blindSide!==me.blindSide))buildBlind(me.blindSide);
  else if(!on&&o&&!o.classList.contains('out')){o.classList.add('out');setTimeout(()=>{const x=$('blind');if(x&&x.classList.contains('out'))x.remove();},900);blindSide=null;}}
 /* ===== 3D table cards ===== */
-const FROM=[[0,190,8],[-190,0,-30],[0,-190,170],[190,0,30]];
+// seats around the table: you at the bottom, others clockwise
+const seatAngle=(k,n=P.length)=>Math.PI/2+k*2*Math.PI/n;
+function seatStyle(k){const n=P.length,W=$('scene').clientWidth||360,a=seatAngle(k,n);
+ const w=k===0?124:(n>4?70:82);const cx=W/2+(W/2-w/2-2)*Math.cos(a),cy=188+150*Math.sin(a);
+ return `left:${(cx-w/2).toFixed(0)}px;top:${Math.max(0,Math.min(304,cy-34)).toFixed(0)}px;width:${w}px`;}
+function layoutTable(){const f=$('felt');f.querySelectorAll('.slot3d').forEach(e=>e.remove());
+ P.forEach((p,k)=>{const a=seatAngle(k),sl=document.createElement('div');sl.className='slot3d';sl.id='slot'+k;
+  sl.style.left=(50+27*Math.cos(a)).toFixed(1)+'%';sl.style.top=(50+29*Math.sin(a)).toFixed(1)+'%';f.appendChild(sl);});}
+window.addEventListener('resize',()=>{if(P.length)renderTable();});
 function placeCard(k,c){const sl=$('slot'+k);sl.innerHTML='';const e=document.createElement('div');e.className='c3d land';
- const [fx,fy,fr]=FROM[k];e.style.setProperty('--fx',fx+'px');e.style.setProperty('--fy',fy+'px');e.style.setProperty('--fr',(fr+rnd(30)-15)+'deg');
+ const a=seatAngle(k),fx=Math.round(Math.cos(a)*190),fy=Math.round(Math.sin(a)*190),fr=Math.round(Math.cos(a)*-30);e.style.setProperty('--fx',fx+'px');e.style.setProperty('--fy',fy+'px');e.style.setProperty('--fr',(fr+rnd(30)-15)+'deg');
  e.innerHTML=`<div class="face fr"></div><div class="face bk">${cardHTML({back:1})}</div>`;sl.appendChild(e);tone(240+rnd(60),.05,'triangle',.05);}
 async function revealCards(){const ks=P.map((p,k)=>k).filter(k=>$('slot'+k).firstChild);
  for(const k of ks){const e=$('slot'+k).firstChild;e.querySelector('.fr').innerHTML=cardHTML(P[k].played);e.classList.remove('land');e.classList.add('up');tone(700+k*90,.06,'triangle',.05);await sleep(130);}
@@ -724,7 +730,7 @@ async function finish(w){over=true;renderTable();$('playBtn').disabled=true;awai
 
 function pickEvent(){const tot=EVENTS.reduce((s,e)=>s+e.w,0);let r=Math.random()*tot;for(const e of EVENTS){if((r-=e.w)<0)return e;}return EVENTS[0];}
 const RULES=`
- <p>参加者は4人。生き残れるのは<b style="color:var(--red2)">一人だけ</b>。命は全員 <b style="color:#5fd07a">20</b>。</p>
+ <p>参加者は2〜6人（開始時に選ぶ）。生き残れるのは<b style="color:var(--red2)">一人だけ</b>。命は全員 <b style="color:#5fd07a">20</b>。</p>
  <h3>流れ</h3>
  <ul><li>毎ラウンド、全員に4枚配られる。</li>
  <li>1枚ずつ伏せて出し、全員そろったら一斉に公開（これを4回）。</li>
@@ -757,11 +763,15 @@ async function loop(){
   for(trick=0;trick<TRICKS;trick++){renderTable();await playTrick();if(checkEnd())return;}
  }}
 async function start(){
- const nos=[];while(nos.length<4){const n=1+rnd(99);if(!nos.includes(n))nos.push(n);}
+ let saved=4;try{saved=+localStorage.getItem('dc_np')||4;}catch(e){}
+ const NP=await modal('参加人数','<p style="text-align:center">何人で命を賭ける？<br><span style="color:var(--dim);font-size:12px">あなた＋CPU（2〜6人）</span></p>',
+  [2,3,4,5,6].map(n=>({label:`${n}人`,value:n,cls:n===saved?'':'ghost'})));
+ try{localStorage.setItem('dc_np',NP);}catch(e){}
+ const nos=[];while(nos.length<NP){const n=1+rnd(99);if(!nos.includes(n))nos.push(n);}
  const tag=n=>'No.'+String(n).padStart(2,'0');
- P=[{name:'あなた',color:'#f2f2f2',cpu:false},{color:'#ff4d5e',cpu:true},{color:'#3fb2ff',cpu:true},{color:'#ffc93c',cpu:true}]
-  .map((p,k)=>({...p,no:tag(nos[k]),name:p.name||tag(nos[k]),hp:MAXHP,alive:true,hand:[],played:null}));
- document.querySelectorAll('.slot3d').forEach(s=>s.innerHTML='');
+ const COLORS=['#f2f2f2','#ff4d5e','#3fb2ff','#ffc93c','#79e08a','#c79bff'];
+ P=nos.map((n,k)=>({name:k?tag(n):'あなた',no:tag(n),color:COLORS[k],cpu:k>0,hp:MAXHP,alive:true,hand:[],played:null}));
+ layoutTable();
  round=0;trick=0;over=false;speed=1;lastHp=MAXHP;$('scars').innerHTML='';document.querySelectorAll('.tear,.frag,.dmgf').forEach(e=>e.remove());ev=EVENTS[0];$('log').innerHTML='';renderEvent();renderTable();renderHand();
  await modal('最下位の札',`<p style="text-align:center">今回のあなたの番号は <b style="color:var(--red2);font-size:18px">${P[0].no}</b> だ。<br>対戦相手：${P.slice(1).map(nm).join('・')}</p>`+RULES,[{label:'ゲームを始める',value:1}]);
  gm(`${P[0].no}、では始めよう。最下位になった者から死んでいく。`);loop();}
