@@ -71,7 +71,7 @@ h1 span{color:var(--red2)}
 .seat.dead .x{display:flex}
 .hand .card{touch-action:none}
 .hand .card.dragging{opacity:.2}
-.card.ghost{position:fixed;z-index:70;pointer-events:none;width:68px;height:96px;font-size:32px;margin:0;box-shadow:0 18px 34px rgba(0,0,0,.75),0 0 0 2px var(--red2),0 0 24px rgba(255,59,82,.6);transition:none}
+.card.ghost{position:fixed;z-index:62;pointer-events:none;width:68px;height:96px;font-size:32px;margin:0;box-shadow:0 18px 34px rgba(0,0,0,.75),0 0 0 2px var(--red2),0 0 24px rgba(255,59,82,.6);transition:none}
 .hlogo{display:flex;align-items:center;justify-content:center;gap:10px}
 .hlogo svg{width:46px;height:46px;filter:drop-shadow(0 0 10px rgba(208,20,44,.6))}
 .hlogo .tt{text-align:left}
@@ -91,9 +91,14 @@ h1 span{color:var(--red2)}
 /* half blindness overlay : broken LCD */
 #blind{position:fixed;inset:0;pointer-events:none;z-index:65;overflow:hidden}
 .bbase{position:absolute;top:0;bottom:0;width:50%;background:#030305;
- background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px);animation:bbIn .9s cubic-bezier(.2,.9,.3,1) both}
+ background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px);animation:bbIn .5s .75s steps(1) both}
 #blind.left .bbase{left:0}#blind.right .bbase{right:0}
-@keyframes bbIn{from{width:0}to{width:50%}}
+@keyframes bbIn{0%{opacity:0}20%{opacity:1}35%{opacity:.15}50%{opacity:1}65%{opacity:.4}100%{opacity:1}}
+.bintro{position:absolute;inset:0;animation:biFl .85s steps(1) forwards}
+.bintro .il{position:absolute;top:0;bottom:0}
+.bintro .ih{position:absolute;left:0;right:0}
+@keyframes biFl{0%{opacity:1}12%{opacity:.25;filter:invert(1)}22%{opacity:1;filter:none}34%{opacity:.6;transform:translateX(-12px)}46%{opacity:1;transform:translateX(9px) skewX(6deg)}
+ 58%{opacity:.3;filter:hue-rotate(160deg)}70%{opacity:.9;transform:none;filter:none}84%{opacity:.4}100%{opacity:0}}
 .vl{position:absolute;top:0;bottom:0;opacity:0;
  animation:vlIn .25s var(--d0) steps(2) forwards,vlH var(--ht) steps(1) var(--hd) infinite,vlF var(--ft) steps(2) var(--hd) infinite}
 .vl.fade{-webkit-mask-image:linear-gradient(180deg,#000 var(--m1),transparent var(--m2),#000 var(--m3));mask-image:linear-gradient(180deg,#000 var(--m1),transparent var(--m2),#000 var(--m3))}
@@ -449,12 +454,21 @@ function buildBlind(side){let o=$('blind');if(o)o.remove();o=document.createElem
   const op=w>=10?(.55+Math.random()*.35):(.45+Math.random()*.55);
   const fade=Math.random()<.3;const m1=rnd(60);
   html+=`<div class="vl${fade?' fade':''}" style="left:calc(${x.toFixed(2)}% - ${side==='right'?w:0}px);width:${w}px;background:${bg};`+
-   `box-shadow:0 0 ${w>=4?6:3}px ${c};--op:${op.toFixed(2)};--d0:${(d/50*0.85+Math.random()*.1).toFixed(2)}s;`+
+   `box-shadow:0 0 ${w>=4?6:3}px ${c};--op:${op.toFixed(2)};--d0:${(.72+Math.random()*.35).toFixed(2)}s;`+
    `--ht:${(.6+Math.random()*3).toFixed(2)}s;--hd:${(-Math.random()*3).toFixed(2)}s;--ft:${(.15+Math.random()*1.2).toFixed(2)}s;--jx:${rnd(5)-2}px;`+
    `--m1:${m1}%;--m2:${m1+8+rnd(20)}%;--m3:${Math.min(100,m1+30+rnd(40))}%"></div>`;}
  // bright dead line on the boundary
  html+=`<div class="vl" style="left:calc(50% - 1px);width:2px;background:#fff;box-shadow:0 0 10px #fff,0 0 22px #0ff;--op:.85;--d0:.8s;--ht:1.3s;--hd:0s;--ft:.2s;--jx:3px"></div>`;
- o.innerHTML=html;document.body.appendChild(o);blindSide=side;}
+ // full-screen glitch burst before one half settles
+ let ih='<div class="bintro">';
+ for(let i=0;i<80;i++){const w=Math.random()<.7?1+rnd(3):5+rnd(20);
+  ih+=`<div class="il" style="left:${(Math.random()*100).toFixed(1)}%;width:${w}px;background:${pick(COLS)};opacity:${(.4+Math.random()*.6).toFixed(2)}"></div>`;}
+ for(let i=0;i<9;i++)ih+=`<div class="ih" style="top:${rnd(100)}%;height:${2+rnd(30)}px;background:${pick(COLS)};opacity:${(.3+Math.random()*.5).toFixed(2)};mix-blend-mode:difference"></div>`;
+ ih+='</div>';
+ o.innerHTML=ih+html;document.body.appendChild(o);blindSide=side;
+ setTimeout(()=>{const x=o.querySelector('.bintro');if(x)x.remove();},900);
+ const w=$('wrap');w.classList.add('invert');setTimeout(()=>w.classList.remove('invert'),90);setTimeout(()=>w.classList.add('invert'),260);setTimeout(()=>w.classList.remove('invert'),330);
+ for(let i=0;i<12;i++)setTimeout(()=>tone(200+rnd(2400),.03,'square',.05),i*55);}
 function updateBlind(){const me=P[0];const on=me&&me.alive&&me.blind>0;const o=$('blind');
  if(on&&(!o||o.classList.contains('out')||blindSide!==me.blindSide))buildBlind(me.blindSide);
  else if(!on&&o&&!o.classList.contains('out')){o.classList.add('out');setTimeout(()=>{const x=$('blind');if(x&&x.classList.contains('out'))x.remove();},900);blindSide=null;}}
@@ -522,7 +536,7 @@ function scrambleStorm(d){shock+=d;const n=2+Math.min(14,d);const rate=.5+Math.m
 // whole-screen sway: grows a little with every point of life lost
 (function sway(){const el=$('shake');const t=performance.now()/1000;
  const me=P[0];const k=(me&&me.alive)?K:0;
- if(k>0.001){const a=Math.pow(k,1.3)*7,r=Math.pow(k,1.5)*1.3;
+ if(k>0.001){const a=Math.pow(k,1.15)*15,r=Math.pow(k,1.25)*2.8;
   const x=a*(Math.sin(t*1.7)*.6+Math.sin(t*4.3+1)*.3)+(Math.random()-.5)*a*.35;
   const y=a*(Math.sin(t*2.1+2)*.5+Math.sin(t*5.7)*.25)+(Math.random()-.5)*a*.35;
   const rot=r*(Math.sin(t*1.3)*.7+Math.sin(t*3.1+.5)*.3);
